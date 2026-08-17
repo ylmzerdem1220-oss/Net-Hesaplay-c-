@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sınav Net & Not Hesaplayıcı</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-lg">
+        <div class="max-w-4xl mx-auto px-4 py-6 text-center">
+            <h1 class="text-2xl md:text-3xl font-bold">Öğrenci Hesaplama Portalı</h1>
+            <p class="text-indigo-100 text-sm mt-1">YKS Netlerinizi ve Üniversite Ortalamanızı Hızla Hesaplayın</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-grow w-full">
+        
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-slate-200 mb-6 bg-white rounded-t-xl shadow-sm overflow-hidden">
+            <button id="btn-yks" onclick="switchTab('yks')" class="flex-1 py-4 text-center font-semibold text-indigo-600 border-b-2 border-indigo-600 transition-colors">
+                YKS Net Hesaplama
+            </button>
+            <button id="btn-uni" onclick="switchTab('uni')" class="flex-1 py-4 text-center font-semibold text-slate-500 hover:text-indigo-600 border-b-2 border-transparent transition-colors">
+                Üniversite Not Ortalaması
+            </button>
+        </div>
+
+        <!-- SECTION 1: YKS NET HESAPLAMA -->
+        <div id="tab-yks" class="space-y-6">
+            
+            <!-- TYT Bölümü -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b">
+                    <h2 class="text-xl font-bold text-slate-700">TYT (Temel Yeterlilik Testi)</h2>
+                    <span class="text-sm font-semibold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full">
+                        Toplam Net: <strong id="tyt-total-net" class="text-lg">0.00</strong>
+                    </span>
+                </div>
+                <div class="space-y-3" id="tyt-courses"></div>
+            </div>
+
+            <!-- AYT Bölümü -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b">
+                    <h2 class="text-xl font-bold text-slate-700">AYT (Alan Yeterlilik Testi)</h2>
+                    <span class="text-sm font-semibold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full">
+                        Toplam Net: <strong id="ayt-total-net" class="text-lg">0.00</strong>
+                    </span>
+                </div>
+                <div class="space-y-3" id="ayt-courses"></div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: ÜNİVERSİTE NOT HESAPLAMA -->
+        <div id="tab-uni" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4 pb-4 border-b">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-700">Vize / Final Ağırlıklı Ortalaması</h2>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2 rounded-lg text-center">
+                        <span class="text-xs uppercase font-bold block text-emerald-600">Genel Ortalama</span>
+                        <span id="uni-gpa" class="text-2xl font-black">0.00</span> / 100
+                    </div>
+                </div>
+                <div id="uni-course-list" class="space-y-3"></div>
+                <button onclick="addUniCourseRow()" class="mt-4 w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition border border-dashed border-slate-300 flex items-center justify-center gap-2">
+                    Yeni Ders Ekle
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const tytSubjects = [
+            { id: 'tyt-turkce', name: 'Türkçe', max: 40 },
+            { id: 'tyt-mat', name: 'Matematik', max: 40 },
+            { id: 'tyt-sosyal', name: 'Sosyal Bilimler', max: 20 },
+            { id: 'tyt-fen', name: 'Fen Bilimleri', max: 20 }
+        ];
+
+        const aytSubjects = [
+            { id: 'ayt-mat', name: 'Matematik', max: 40 },
+            { id: 'ayt-fizik', name: 'Fizik', max: 14 },
+            { id: 'ayt-kimya', name: 'Kimya', max: 13 },
+            { id: 'ayt-biyo', name: 'Biyoloji', max: 13 },
+            { id: 'ayt-edebiyat', name: 'Edebiyat', max: 24 },
+            { id: 'ayt-tarih1', name: 'Tarih-1', max: 10 },
+            { id: 'ayt-cografya1', name: 'Coğrafya-1', max: 6 }
+        ];
+
+        function switchTab(tab) {
+            const yksTab = document.getElementById('tab-yks');
+            const uniTab = document.getElementById('tab-uni');
+            if (tab === 'yks') {
+                yksTab.classList.remove('hidden'); uniTab.classList.add('hidden');
+            } else {
+                yksTab.classList.add('hidden'); uniTab.classList.remove('hidden');
+            }
+        }
+
+        function renderYksSection(containerId, subjects) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = subjects.map(sub => `
+                <div class="grid grid-cols-12 gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    <div class="col-span-3 font-medium text-slate-700 text-xs sm:text-sm">${sub.name}</div>
+                    <div class="col-span-2"><input type="number" id="${sub.id}-d" placeholder="D" oninput="calculateYksNet('${containerId}')" class="w-full p-1 text-center border rounded focus:ring-2 focus:ring-indigo-500"></div>
+                    <div class="col-span-2"><input type="number" id="${sub.id}-y" placeholder="Y" oninput="calculateYksNet('${containerId}')" class="w-full p-1 text-center border rounded focus:ring-2 focus:ring-indigo-500"></div>
+                    <div class="col-span-2"><input type="number" id="${sub.id}-b" placeholder="B" oninput="calculateYksNet('${containerId}')" class="w-full p-1 text-center border rounded focus:ring-2 focus:ring-indigo-500"></div>
+                    <div class="col-span-3 text-right font-semibold text-indigo-600 text-sm">Net: <span id="${sub.id}-net">0.00</span></div>
+                </div>
+            `).join('');
+        }
+
+        function calculateYksNet(type) {
+            const subjects = type === 'tyt-courses' ? tytSubjects : aytSubjects;
+            let totalNet = 0;
+            subjects.forEach(sub => {
+                const dInput = document.getElementById(`${sub.id}-d`);
+                const yInput = document.getElementById(`${sub.id}-y`);
+                const bInput = document.getElementById(`${sub.id}-b`);
+                const netSpan = document.getElementById(`${sub.id}-net`);
+
+                let d = parseFloat(dInput.value) || 0;
+                let y = parseFloat(yInput.value) || 0;
+                let b = parseFloat(bInput.value) || 0;
+
+                if (d + y + b > sub.max) {
+                    b = sub.max - (d + y);
+                    if (b < 0) { b = 0; y = sub.max - d; yInput.value = y; }
+                    bInput.value = b;
+                }
+                const net = d - (y / 4);
+                netSpan.innerText = net.toFixed(2);
+                totalNet += net;
+            });
+            const totalId = type === 'tyt-courses' ? 'tyt-total-net' : 'ayt-total-net';
+            document.getElementById(totalId).innerText = totalNet.toFixed(2);
+        }
+
+        function addUniCourseRow() {
+            const container = document.getElementById('uni-course-list');
+            const div = document.createElement('div');
+            div.className = "grid grid-cols-12 gap-2 items-center bg-slate-50 p-3 rounded-lg border border-slate-200";
+            div.innerHTML = `
+                <div class="col-span-5"><input type="text" placeholder="Ders" class="w-full p-2 text-sm border rounded"></div>
+                <div class="col-span-3"><input type="number" placeholder="Vize" oninput="calculateUniGPA()" class="uni-vize w-full p-2 text-sm border rounded"></div>
+                <div class="col-span-3"><input type="number" placeholder="Final" oninput="calculateUniGPA()" class="uni-final w-full p-2 text-sm border rounded"></div>
+                <div class="col-span-1"><button onclick="this.parentElement.parentElement.remove(); calculateUniGPA()" class="text-rose-500">X</button></div>
+            `;
+            container.appendChild(div);
+        }
+
+        function calculateUniGPA() {
+            const rows = document.querySelectorAll('#uni-course-list > div');
+            let sum = 0, count = 0;
+            rows.forEach(row => {
+                let v = parseFloat(row.querySelector('.uni-vize').value) || 0;
+                let f = parseFloat(row.querySelector('.uni-final').value) || 0;
+                sum += (v * 0.4) + (f * 0.6);
+                count++;
+            });
+            document.getElementById('uni-gpa').innerText = count > 0 ? (sum / count).toFixed(2) : "0.00";
+        }
+
+        window.onload = () => {
+            renderYksSection('tyt-courses', tytSubjects);
+            renderYksSection('ayt-courses', aytSubjects);
+            addUniCourseRow();
+        };
+    </script>
+</body>
+</html>
